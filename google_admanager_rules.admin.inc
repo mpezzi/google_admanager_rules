@@ -3,20 +3,20 @@
 
 /**
  * @file
- * Google Admanager Path page callback file for google_admanager_path module.
+ * Google Admanager Rules page callback file for google_admanager_rules module.
  */
 
 /**
  * Administration Pages.
  */
-function google_admanager_path_admin($callback = '') {
+function google_admanager_rules_admin($callback = '') {
   $op = isset($_POST['op']) ? $_POST['op'] : $callback;
   
-  if ( !empty($_POST['paths']) && isset($_POST['operation']) && ( $_POST['operation'] == 'delete' ) ) {
-    $output = drupal_get_form('google_admanager_path_multiple_delete_confirm');
+  if ( !empty($_POST['rules']) && isset($_POST['operation']) && ( $_POST['operation'] == 'delete' ) ) {
+    $output = drupal_get_form('google_admanager_rules_multiple_delete_confirm');
   }
   else {
-    $output = drupal_get_form('google_admanager_path_admin_form');
+    $output = drupal_get_form('google_admanager_rules_admin_form');
   }
   
   return $output;
@@ -25,25 +25,25 @@ function google_admanager_path_admin($callback = '') {
 /**
  * Form builder; Return form for advertisement administration form.
  */
-function google_admanager_path_admin_form() {
+function google_admanager_rules_admin_form() {
   $form = array();
   
-  drupal_add_css(drupal_get_path('module', 'google_admanager_path') . '/google_admanager_path.css');
+  drupal_add_css(drupal_get_path('module', 'google_admanager_rules') . '/google_admanager_rules.css');
   
   // Headers.
   $header = array(
     array(),
-    array('data' => t('Tag'), 'field' => 'p.tag', 'sort' => 'asc'),
-    array('data' => t('Name'), 'field' => 'p.name'),
-    array('data' => t('Rule'), 'field' => 'p.rule'),
-    array('data' => t('Status'), 'field' => 'p.status'),
+    array('data' => t('Tag'), 'field' => 'r.tag', 'sort' => 'asc'),
+    array('data' => t('Name'), 'field' => 'r.name'),
+    array('data' => t('Rules'), 'field' => 'r.rule'),
+    array('data' => t('Status'), 'field' => 'r.status'),
     t('Operations'),
   );
   
   // Query.
-  $sql = "SELECT p.pid, p.tag, p.name, p.status, p.rule FROM {google_admanager_path} as p";
+  $sql = "SELECT r.rid, r.tag, r.name, r.status, r.rule FROM {google_admanager_rules} as r";
   $sql .= tablesort_sql($header);
-  $sql_count = "SELECT COUNT(p.pid) FROM {google_admanager_path} as p";
+  $sql_count = "SELECT COUNT(r.rid) FROM {google_admanager_rules} as r";
 
   $result = pager_query($sql, 50, 0, $sql_count);
 
@@ -51,17 +51,17 @@ function google_admanager_path_admin_form() {
 
   $destination = drupal_get_destination();
 
-  $paths = array();
-  while ( $path = db_fetch_object($result) ) {
-    $rules = $path->rule ? explode("\n", $path->rule) : array();
-    $rules = array_map('check_plain', $rules);
+  $rules = array();
+  while ( $rule = db_fetch_object($result) ) {
+    $rules_array = $rule->rule ? explode("\n", $rule->rule) : array();
+    $rules_array = array_map('check_plain', $rules_array);
     
-    $paths[$path->pid] = '';
-    $form['tag'][$path->pid] = array('#value' => $path->tag);
-    $form['name'][$path->pid] = array('#value' => $path->name);
-    $form['rule'][$path->pid] = array('#value' => theme('item_list', $rules));
-    $form['status'][$path->pid] = array('#value' => $status[$path->status]);
-    $form['operations'][$path->pid] = array('#value' => l('Edit', 'admin/content/advertisement/edit/' . $path->pid, array('query' => $destination)));
+    $rules[$rule->rid] = '';
+    $form['tag'][$rule->rid] = array('#value' => $rule->tag);
+    $form['name'][$rule->rid] = array('#value' => $rule->name);
+    $form['rule'][$rule->rid] = array('#value' => theme('item_list', $rules_array));
+    $form['status'][$rule->rid] = array('#value' => $status[$rule->status]);
+    $form['operations'][$rule->rid] = array('#value' => l('Edit', 'admin/content/advertisement/edit/' . $rule->rid, array('query' => $destination)));
   }
   
   $form['operation'] = array(
@@ -74,9 +74,9 @@ function google_admanager_path_admin_form() {
     '#value' => t('Delete'),
   );
 
-  $form['paths'] = array(
+  $form['rules'] = array(
     '#type' => 'checkboxes',
-    '#options' => $paths,
+    '#options' => $rules,
   );
 
   $form['pager'] = array(
@@ -89,24 +89,24 @@ function google_admanager_path_admin_form() {
 /**
  * Form builder; Confirm multiple delete.
  */
-function google_admanager_path_multiple_delete_confirm(&$form_state) {
+function google_admanager_rules_multiple_delete_confirm(&$form_state) {
   $edit = $form_state['post'];
   
-  $form['paths'] = array(
+  $form['rules'] = array(
     '#prefix' => '<ul>',
     '#suffix' => '</ul>',
     '#tree' => TRUE,
   );
   
-  foreach ( $edit['paths'] as $pid => $value ) {
+  foreach ( $edit['rules'] as $rid => $value ) {
     if ( $value != 0 ) {
-      $path = google_admanager_path_load($pid);
+      $rule = google_admanager_rules_load($rid);
       
-      $form['paths'][$pid] = array(
+      $form['rules'][$rid] = array(
         '#type' => 'hidden',
-        '#value' => $pid,
+        '#value' => $rid,
         '#prefix' => '<li>',
-        '#suffix' => check_plain($path->tag . ' -> ' . $path->name) . '</li>',
+        '#suffix' => check_plain($rule->tag . ' -> ' . $rule->name) . '</li>',
       );
     }
   }
@@ -117,7 +117,7 @@ function google_admanager_path_multiple_delete_confirm(&$form_state) {
   );
   
   return confirm_form($form, 
-          t('Are you sure you want to delete these paths?'), 
+          t('Are you sure you want to delete these rules?'), 
           'admin/content/advertisement', 
           t('This action cannot be undone.'), 
           t('Delete all'), 
@@ -128,16 +128,16 @@ function google_admanager_path_multiple_delete_confirm(&$form_state) {
 /**
  * Form builder; Submit confirm multiple delete.
  */
-function google_admanager_path_multiple_delete_confirm_submit($form, &$form_state) {
+function google_admanager_rules_multiple_delete_confirm_submit($form, &$form_state) {
   $i = 0;
-  foreach ( $form_state['values']['paths'] as $pid ) {
-    if ( $pid != 0 ) {
-      db_query("DELETE FROM {google_admanager_path} WHERE pid = %d", $pid);
+  foreach ( $form_state['values']['rules'] as $rid ) {
+    if ( $rid != 0 ) {
+      db_query("DELETE FROM {google_admanager_rules} WHERE rid = %d", $rid);
       $i++;
     }
   }
 
-  drupal_set_message($i . ' paths have been deleted');
+  drupal_set_message($i . ' rules have been deleted');
 
   $form_state['redirect'] = 'admin/content/advertisement';
 }
@@ -145,41 +145,43 @@ function google_admanager_path_multiple_delete_confirm_submit($form, &$form_stat
 /**
  * Form Builder; Path Object form.
  */
-function google_admanager_path_form($form, $path = NULL) {
+function google_admanager_rules_form($form, $rule = NULL) {
   $form = array();
   
-  $form['pid'] = array(
+  $form['rid'] = array(
     '#type' => 'hidden',
-    '#value' => isset($path->pid) ? $path->pid : '',
+    '#value' => isset($rule->rid) ? $rule->rid : '',
   );
   
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Name'),
     '#description' => t('The name of the custom critera rule.<br />Example: design, food, sponsor_name, etc.'),
-    '#default_value' => isset($path->name) ? $path->name : '',
+    '#required' => TRUE,
+    '#default_value' => isset($rule->name) ? $rule->name : '',
   );
   
   $form['tag'] = array(
     '#type' => 'textfield',
     '#title' => t('Tag'),
     '#description' => t('The group or tag name of the custom critera rule.<br />Example: sponsor, section, etc.'),
-    '#default_value' => isset($path->tag) ? $path->tag : '',
+    '#required' => TRUE,
+    '#default_value' => isset($rule->tag) ? $rule->tag : '',
   );
   
   $form['rule'] = array(
     '#type' => 'textarea',
-    '#title' => t('Rule'),
+    '#title' => t('Rules'),
     '#description' => t('Paths or terms that will activate this critera rule. <strong>One per line</strong>.<br />Example: node/180, design/article, term:sponsors:company, etc.'),
     '#cols' => 20,
     '#rows' => 10,
-    '#default_value' => isset($path->rule) ? $path->rule : '',
+    '#default_value' => isset($rule->rule) ? $rule->rule : '',
   );
   
   $form['status'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enabled'),
-    '#default_value' => isset($path->status) ? $path->status : 0,
+    '#default_value' => isset($rule->status) ? $rule->status : 0,
   );
   
   $form['submit'] = array(
@@ -193,10 +195,10 @@ function google_admanager_path_form($form, $path = NULL) {
 /**
  * Form; Submit Path Object.
  */
-function google_admanager_path_form_submit($form, &$form_state) {
-  $path = $form_state['values'];
+function google_admanager_rules_form_submit($form, &$form_state) {
+  google_admanager_rules_save($form_state['values']);
   
-  google_admanager_path_save($path);
+  $form_state['redirect'] = 'admin/content/advertisement';
   
   drupal_set_message('The Advertisement path has been saved.');
 }
@@ -204,22 +206,22 @@ function google_admanager_path_form_submit($form, &$form_state) {
 /**
  * Theme path administration overview.
  */
-function theme_google_admanager_path_admin_form($form) {
+function theme_google_admanager_rules_admin_form($form) {
   
   // Headers.
   $header = array(
     theme('table_select_header_cell'),
-    array('data' => t('Tag'), 'field' => 'p.tag'),
-    array('data' => t('Name'), 'field' => 'p.name'),
-    array('data' => t('Rule'), 'field' => 'p.rule'),
-    array('data' => t('Status'), 'field' => 'p.status'),
+    array('data' => t('Tag'), 'field' => 'r.tag'),
+    array('data' => t('Name'), 'field' => 'r.name'),
+    array('data' => t('Rules'), 'field' => 'r.rule'),
+    array('data' => t('Status'), 'field' => 'r.status'),
     t('Operations'),
   );
   
   if ( isset($form['tag']) && is_array($form['name']) ) {
     foreach ( element_children($form['name']) as $key ) {
       $rows[] = array(
-        drupal_render($form['paths'][$key]),
+        drupal_render($form['rules'][$key]),
         drupal_render($form['tag'][$key]),
         drupal_render($form['name'][$key]),
         drupal_render($form['rule'][$key]),

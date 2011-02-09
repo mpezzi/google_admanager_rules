@@ -1,0 +1,106 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provides an interface to add/edit/remote Google Ad paths.
+ */
+
+require_once dirname(__FILE__) . '/google_admanager_rules.inc';
+
+/**
+ * Implements hook_init().
+ */
+function google_admanager_rules_init() {
+  global $user;
+  
+  $query_path = substr(drupal_get_path_alias($_SERVER['REQUEST_URI']), 1);
+  
+  foreach ( google_admanager_rules_get_rules_by_rule($query_path) as $rule ) {
+    if ( user_access('view google admanager rules messages') && isset($user->google_admanager_rules_messages) && $user->google_admanager_rules_messages ) {
+      drupal_set_message( t('Advertisement Rule: !tag -> !name', array('!tag' => $rule->tag, '!name' => $rule->name)) );
+    }
+    google_admanager_add_attribute($rule->tag, $rule->name);
+  }
+}
+
+/**
+ * Implements hook_perm().
+ */
+function google_admanager_rules_perm() {
+  return array('administer google admanager rules', 'view google admanager rules messages');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function google_admanager_rules_menu() {
+  return array(
+    'admin/content/advertisement' => array(
+      'title' => 'Advertisement Rules',
+      'description' => 'Administer advertisements rules',
+      'page callback' => 'google_admanager_rules_admin',
+      'access arguments' => array('administer google admanager rules'),
+      'type' => MENU_NORMAL_ITEM,
+      'file' => 'google_admanager_rules.admin.inc',
+    ),
+    'admin/content/advertisement/list' => array(
+      'title' => 'List',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => 0,
+    ),
+    'admin/content/advertisement/add' => array(
+      'title' => 'Add',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('google_admanager_rules_form'),
+      'access arguments' => array('administer google admanager rules'),
+      'type' => MENU_LOCAL_TASK,
+      'file' => 'google_admanager_rules.admin.inc',
+      'weight' => 1,
+    ),
+    'admin/content/advertisement/edit/%google_admanager_rules' => array(
+      'title' => 'Edit',
+      'page title' => t('Edit Advertisement Rule'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('google_admanager_rules_form', 4),
+      'access arguments' => array('administer google admanager rules'),
+      'type' => MENU_CALLBACK,
+      'file' => 'google_admanager_rules.admin.inc',
+      'weight' => 1,
+    ),
+  );
+}
+
+/**
+ * Implements hook_user().
+ */
+function google_admanager_rules_user($op, &$edit, &$account, $category = NULL) {
+  if ( $op == 'form' && $category == 'account' && user_access('view google admanager rules messages', $account) ) {
+    $form['google_admanager_rules'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Google Admanager Rules'),
+      '#collapsible' => TRUE,
+      '#weight' => -9,
+    );
+    
+    $form['google_admanager_rules']['google_admanager_rules_messages'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable Google Admanager Rules Messages'),
+      '#default_value' => isset($account->google_admanager_rules_messages) ? $account->google_admanager_rules_messages : 0,
+    );
+    
+    return $form;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function google_admanager_rules_theme($existing, $type, $theme, $path) {
+  return array(
+    'google_admanager_rules_admin_form' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'google_admanager_rules.admin.inc',
+    ),
+  );
+}
