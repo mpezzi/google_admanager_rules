@@ -1,0 +1,65 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Define schema for google_admanager_path module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function google_admanager_path_schema() {
+  $schema['google_admanager_path'] = array(
+    'description' => 'Store site advertisement road block settings.',
+    'fields' => array(
+      'pid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => '',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 60,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => '',
+      ),
+      'tag' => array(
+        'type' => 'varchar',
+        'length' => 60,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => '',
+      ),
+      'rule' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => '',
+      ),
+    ),
+    'primary key' => array('gapid'),
+  );
+  
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function google_admanager_path_install() {
+  drupal_install_schema('google_admanager_path');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function google_admanager_path_uninstall() {
+  drupal_uninstall_schema('google_admanager_path');
+}

@@ -1,0 +1,12 @@
+#google-admanager-path-admin-form td {
+  vertical-align: top;
+}
+
+#google-admanager-path-admin-form .item-list ul {
+  margin: 0;
+}
+
+#google-admanager-path-admin-form .item-list ul li {
+  padding-top: 0;
+  padding-bottom: 0;
+}

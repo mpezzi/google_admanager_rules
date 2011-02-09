@@ -1,0 +1,6 @@
+; $Id$
+name            = "Google Admanager Path"
+description     = "Provides an interface to add/edit/remote Google Ad paths"
+core            = "6.x"
+
+dependencies[]  = google_admanager
