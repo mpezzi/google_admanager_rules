@@ -75,7 +75,7 @@ function google_admanager_rules_load_active() {
 /**
  * Determine rule for a given path.
  */
-function google_admanager_rules_get_rules_by_rule($query_path) {
+function google_admanager_rules_get_rules_by_path($query_path) {
   $matched_rules = array();
   
   foreach ( google_admanager_rules_load_active() as $rule ) {
