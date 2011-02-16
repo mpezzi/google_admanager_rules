@@ -14,9 +14,7 @@ require_once dirname(__FILE__) . '/google_admanager_rules.inc';
 function google_admanager_rules_init() {
   global $user;
   
-  $query_path = substr(drupal_get_path_alias(request_uri()), 1);
-  
-  foreach ( google_admanager_rules_get_rules_by_path($query_path) as $rule ) {
+  foreach ( google_admanager_rules_get_rules_by_path() as $rule ) {
     if ( user_access('view google admanager rules messages') && isset($user->google_admanager_rules_messages) && $user->google_admanager_rules_messages ) {
       drupal_set_message( t('Advertisement Rule: !tag -> !name', array('!tag' => $rule->tag, '!name' => $rule->name)) );
     }

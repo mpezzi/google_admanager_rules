@@ -75,8 +75,14 @@ function google_admanager_rules_load_active() {
 /**
  * Determine rule for a given path.
  */
-function google_admanager_rules_get_rules_by_path($query_path) {
+function google_admanager_rules_get_rules_by_path() {
   $matched_rules = array();
+  
+  // Include both the path alias and normal path matching.
+  $current_path = array(drupal_get_path_alias($_GET['q']));
+  if ( $current_path[0] != $_GET['q'] ) {
+    $current_path[] = $_GET['q'];
+  }
   
   foreach ( google_admanager_rules_load_active() as $rule ) {
     $rules = explode("\n", $rule->rule);
@@ -103,24 +109,11 @@ function google_admanager_rules_get_rules_by_path($query_path) {
               }
             }
           }
-          
         }
         
       }
       else {
-        $regex = '/^('. 
-                  preg_replace(array('/(\r\n?|\n)/', '/\\\\\*/', '/(^|\|)\\\\<front\\\\>($|\|)/'), 
-                               array('|', '.*', '\1'. preg_quote(variable_get('site_frontpage', 'node'), '/') .'\2'), 
-                               preg_quote($r, '/')) .
-                 ')$/';
-
-        $page_match = preg_match($regex, $query_path);
-
-        if ( $query_path != $_GET['q'] ) {
-          $page_match = $page_match || preg_match($regex, $_GET['q']);
-        }
-
-        if ( $page_match > 0 ) {
+        if ( google_admanager_rules_match($current_path, $r, TRUE) ) {
           $matched_rules[$rule->rid] = $rule;
         }
       }
@@ -128,4 +121,48 @@ function google_admanager_rules_get_rules_by_path($query_path) {
   }
   
   return $matched_rules;
+}
+
+/**
+ * Determine if the subject matches the patterns path.
+ * - Code modified slightly from context module.
+ */
+function google_admanager_rules_match($subject, $pattern, $path = FALSE) {
+  static $regexps;
+  $match = FALSE;
+  $positives = $negatives = 0;
+  $subject = !is_array($subject) ? array($subject) : $subject;
+  
+  if (strpos($pattern, '~') === 0) {
+    $negate = TRUE;
+    $negatives++;
+  }
+  else {
+    $negate = FALSE;
+    $positives++;
+  }
+  $pattern = ltrim($pattern, '~');
+  if (!isset($regexps[$pattern])) {
+    if ($path) {
+      $regexps[$pattern] = '/^('. preg_replace(array('/(\r\n?|\n)/', '/\\\\\*/', '/(^|\|)\\\\<front\\\\>($|\|)/'), array('|', '.*', '\1'. preg_quote(variable_get('site_frontpage', 'node'), '/') .'\2'), preg_quote($pattern, '/')) .')$/';
+    }
+    else {
+      $regexps[$pattern] = '/^('. preg_replace(array('/(\r\n?|\n)/', '/\\\\\*/'), array('|', '.*'), preg_quote($pattern, '/')) .')$/';
+    }
+  }
+  foreach ($subject as $value) {
+    if (preg_match($regexps[$pattern], $value)) {
+      if ($negate) {
+        return FALSE;
+      }
+      $match = TRUE;
+    }
+  }
+
+  // If there are **only** negative conditions and we've gotten this far none
+  // we actually have a match.
+  if ($positives === 0 && $negatives) {
+    return TRUE;
+  }
+  return $match;
 }

@@ -1,6 +1,6 @@
 ; $Id$
 name            = "Google Admanager Rules"
-description     = "Provides an interface to add/edit/remove Google Admanager rules."
+description     = "Provides an interface to add/edit/remote Google Admanager rules."
 core            = "6.x"
 
 dependencies[]  = google_admanager
